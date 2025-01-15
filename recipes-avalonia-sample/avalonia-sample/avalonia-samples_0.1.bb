@@ -7,8 +7,8 @@ LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
 
 
-SUMMARY = "bitbake-layers recipe"
-DESCRIPTION = "Recipe created by bitbake-layers"
+SUMMARY = "avalonia sample application build"
+DESCRIPTION = "Build and install avalonia samples"
 LICENSE = "MIT"
 
 python do_display_banner() {
@@ -19,20 +19,28 @@ python do_display_banner() {
     bb.plain("***********************************************");
 }
 
-addtask display_banner before do_build
 
-DEPENDS += "dotnet"
-RDEPENDS:${PN} += "dotnet"
+DEPENDS += "dotnet-native"
+# Note for self-contained compilation dotnet can be removed from RDEPENDS
+RDEPENDS:${PN}:append = " \
+    dotnet \
+    icu \
+    libgssapi-krb5 \
+    zlib \
+"
 
+SRC_ARCH:aarch64 = "arm64"
+SRC_ARCH:arm = "arm"
+SRC_ARCH:x86-64 = "x64"
 
-do_build() {
-    
-        dotnet msbuild ${WORKDIR}/git/src/Avalonia.Samples/Avalonia.Samples.sln
-}
-
+do_compile[network]="1"
 do_compile() {
+        #dotnet restore ${WORKDIR}/git/src/Avalonia.Samples/CompleteApps/SimpleToDoList/SimpleToDoList.csproj
+        dotnet publish ${WORKDIR}/git/src/Avalonia.Samples/CompleteApps/SimpleToDoList/SimpleToDoList.csproj -c Release -o publish -r linux-arm -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true -p:IncludeNativeLibrariesForSelfExtract=true --verbosity detailed
+        #dotnet build ${WORKDIR}/git/src/Avalonia.Samples/Avalonia.Samples.sln  --no-restore --output ${B}/${PN} --configuration release
 }
-#do_install() {
+
+do_install() {
 #        install -d "${D}${bindir}"
 #	install -d "${D}${libdir}/helloworld/.debug"
 #        install -m 0755 ${S}/bin/${CONFIGURATION}/*.mdb ${D}${libdir}/helloworld/.debug
@@ -46,6 +54,7 @@ do_compile() {
 #        sed -i "s|@MONO@|mono|g" ${D}${bindir}/helloworldform
 #        sed -i "s|@prefix@|/usr|g" ${D}${bindir}/helloworldform
 #        sed -i "s|@APP@|helloworld|g" ${D}${bindir}/helloworldform
-#}
+}
 
 
+addtask do_display_banner before do_compile
