@@ -8,7 +8,7 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda
 
 inherit autotools
 inherit mono
-inherit logging
+#inherit logging
 SRC_URI = "git://github.com/AvaloniaUI/Avalonia.Samples.git;protocol=https;branch=main"
 
 SRCREV="2b547d92343081011dfa93e815acd1dd0b92bb31"
@@ -29,13 +29,16 @@ python do_display_banner() {
 }
 
 
-DEPENDS += "dotnet-native"
+DEPENDS += "dotnet-native \
+    lttng-ust \
+        "
 # Note for self-contained compilation dotnet can be removed from RDEPENDS
 RDEPENDS:${PN}:append = " \
     dotnet \
     icu \
     libgssapi-krb5 \
     zlib \
+    lttng-ust \
 "
 
 SRC_ARCH:aarch64 = "arm64"
@@ -49,23 +52,23 @@ INSANE_SKIP:${PN} += "\
 do_compile[network]="1"
 do_compile() {
         #dotnet restore ${WORKDIR}/git/src/Avalonia.Samples/CompleteApps/SimpleToDoList/SimpleToDoList.csproj
-        #dotnet publish ${WORKDIR}/git/src/Avalonia.Samples/CompleteApps/SimpleToDoList/SimpleToDoList.csproj -c Release -o publish -r linux-arm -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true -p:IncludeNativeLibrariesForSelfExtract=true --verbosity detailed
-        dotnet build ${WORKDIR}/git/src/Avalonia.Samples/CompleteApps/SimpleToDoList/SimpleToDoList.csproj --output ${B}/${PN} --configuration debug --runtime linux-${SRC_ARCH}
+        dotnet publish ${WORKDIR}/git/src/Avalonia.Samples/CompleteApps/SimpleToDoList/SimpleToDoList.csproj -c Release -o publish -r linux-${SRC_ARCH} -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:PublishTrimmed=true --self-contained true -p:IncludeNativeLibrariesForSelfExtract=true --verbosity detailed
+        #dotnet build ${WORKDIR}/git/src/Avalonia.Samples/CompleteApps/SimpleToDoList/SimpleToDoList.csproj --output ${B}/${PN} --configuration debug --runtime linux-${SRC_ARCH}
 
         #dotnet build ${WORKDIR}/git/src/Avalonia.Samples/Avalonia.Samples.sln  --no-restore --output ${B}/${PN} --configuration release
 }
 
 do_install() {
     install -d ${D}/opt/
-    cp -r --no-preserve=ownership ${B}/${PN}/SimpleToDoList ${D}/opt
+    cp -r --no-preserve=ownership ${B}/publish/SimpleToDoList ${D}/opt
 
     if [ "${SRC_ARCH}" = "x64" ]; then
         ln -s ${base_libdir} ${D}/lib64
     fi
-	install -d "${D}${libdir}/simpletodolist/.debug"
+	#install -d "${D}${libdir}/simpletodolist/.debug"
     #S directory /home/oliv/dev/rpi-hack/Biosynex/build-yocto-kas/build/tmp/work/cortexa53-poky-linux/simpletodolist/0.1-r0/simpletodolist-0.1
     #/home/oliv/dev/rpi-hack/Biosynex/build-yocto-kas/build/tmp/work/cortexa53-poky-linux/simpletodolist/0.1-r0/build/simpletodolist
-    install -m 0755 ${S}/../build/simpletodolist/*.pdb ${D}${libdir}/simpletodolist/.debug
+    #install -m 0755 ${S}/../build/simpletodolist/*.pdb ${D}${libdir}/simpletodolist/.debug
     #install -m 0755 ${S}/bin/${CONFIGURATION}/*.exe ${D}${libdir}/simpletodolist
 
     #install -m 0755 ${S}/script.in ${D}${bindir}/simpletodolist
